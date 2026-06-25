@@ -1,0 +1,15 @@
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+*.sqlite
+backend/ambulance.db
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+.DS_Store
