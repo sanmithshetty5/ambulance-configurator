@@ -37,9 +37,9 @@ def seed_database():
             
             # 1. Seed vehicles
             vehicles = [
-                models.Vehicle(name="Tata Winger Ambulance", base_cost=400000.00),
-                models.Vehicle(name="Force Traveller Ambulance", base_cost=800000.00),
-                models.Vehicle(name="Maruti Suzuki Eeco Ambulance", base_cost=250000.00)
+                models.Vehicle(name="Tata Winger Ambulance", base_cost=400000.00, length_mm=2800, width_mm=1600, height_mm=1750),
+                models.Vehicle(name="Force Traveller Ambulance", base_cost=800000.00, length_mm=3200, width_mm=1700, height_mm=1900),
+                models.Vehicle(name="Maruti Suzuki Eeco Ambulance", base_cost=250000.00, length_mm=1800, width_mm=1350, height_mm=1400)
             ]
             for v in vehicles:
                 db.add(v)
@@ -52,7 +52,10 @@ def seed_database():
                     unit_cost=50000.00, 
                     model_url="stretcher.glb",
                     is_mandatory=True,
-                    category="medical"
+                    category="medical",
+                    width_mm=550, height_mm=200, depth_mm=1900,
+                    position_x=0.0, position_y=-0.65, position_z=0.6,
+                    rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
                 ),
                 "oxygen": models.Equipment(
                     name="Oxygen Cylinder", 
@@ -60,7 +63,10 @@ def seed_database():
                     unit_cost=30000.00, 
                     model_url="oxygen_cylinder.glb",
                     is_mandatory=True,
-                    category="medical"
+                    category="medical",
+                    width_mm=230, height_mm=760, depth_mm=230,
+                    position_x=-0.65, position_y=-0.35, position_z=0.5,
+                    rotation_x=1.5708, rotation_y=0.0, rotation_z=0.0
                 ),
                 "cabinet": models.Equipment(
                     name="Medical Cabinet", 
@@ -68,7 +74,10 @@ def seed_database():
                     unit_cost=25000.00, 
                     model_url="medical_cabinet.glb",
                     is_mandatory=False,
-                    category="storage"
+                    category="storage",
+                    width_mm=400, height_mm=500, depth_mm=200,
+                    position_x=0.7, position_y=0.1, position_z=0.0,
+                    rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
                 ),
                 "seating": models.Equipment(
                     name="Seating", 
@@ -76,7 +85,10 @@ def seed_database():
                     unit_cost=20000.00, 
                     model_url="seating.glb",
                     is_mandatory=True,
-                    category="comfort"
+                    category="comfort",
+                    width_mm=700, height_mm=800, depth_mm=400,
+                    position_x=0.55, position_y=-0.5, position_z=-0.3,
+                    rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
                 ),
                 "lighting": models.Equipment(
                     name="Emergency Lighting", 
@@ -84,7 +96,10 @@ def seed_database():
                     unit_cost=15000.00, 
                     model_url="emergency_lighting.glb",
                     is_mandatory=True,
-                    category="safety"
+                    category="safety",
+                    width_mm=600, height_mm=30, depth_mm=100,
+                    position_x=0.0, position_y=0.85, position_z=0.0,
+                    rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
                 ),
                 "storage": models.Equipment(
                     name="Storage Unit", 
@@ -92,7 +107,10 @@ def seed_database():
                     unit_cost=10000.00, 
                     model_url="storage_unit.glb",
                     is_mandatory=False,
-                    category="storage"
+                    category="storage",
+                    width_mm=500, height_mm=350, depth_mm=350,
+                    position_x=-0.65, position_y=-0.65, position_z=-0.3,
+                    rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
                 )
             }
             for item in equipment_items.values():

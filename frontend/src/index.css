@@ -506,7 +506,80 @@ input:checked + .slider:before {
     height: auto;
   }
   
-  .app-container {
+    .app-container {
     height: auto;
   }
 }
+
+/* Equipment Panel Categories & Badges */
+.equipment-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.category-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.category-icon {
+  font-size: 0.9rem;
+}
+
+.equipment-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mandatory-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.equipment-item.mandatory-item {
+  border-color: rgba(239, 68, 68, 0.15);
+  background-color: rgba(239, 68, 68, 0.02);
+}
+
+.switch.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.switch.disabled input {
+  cursor: not-allowed;
+}
+
+.switch.disabled .slider {
+  cursor: not-allowed;
+  background-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+.switch.disabled .slider:before {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+

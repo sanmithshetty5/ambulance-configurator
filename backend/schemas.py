@@ -7,6 +7,9 @@ from datetime import datetime
 class VehicleBase(BaseModel):
     name: str
     base_cost: Decimal
+    length_mm: Optional[float] = None
+    width_mm: Optional[float] = None
+    height_mm: Optional[float] = None
 
 class VehicleResponse(VehicleBase):
     id: int
@@ -20,6 +23,16 @@ class EquipmentBase(BaseModel):
     model_url: str
     is_mandatory: bool
     category: Optional[str] = None
+    width_mm: Optional[float] = None
+    height_mm: Optional[float] = None
+    depth_mm: Optional[float] = None
+    position_x: Optional[float] = None
+    position_y: Optional[float] = None
+    position_z: Optional[float] = None
+    rotation_x: Optional[float] = None
+    rotation_y: Optional[float] = None
+    rotation_z: Optional[float] = None
+
 
 class EquipmentResponse(EquipmentBase):
     id: int

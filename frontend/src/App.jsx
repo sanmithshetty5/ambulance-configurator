@@ -67,12 +67,29 @@ function App() {
     }, 3500);
   };
 
+  // When selected package changes, automatically load its default equipment set
+  useEffect(() => {
+    if (!selectedPackageId || packages.length === 0) return;
+    
+    const selectedPkg = packages.find((p) => p.id === selectedPackageId);
+    if (selectedPkg && selectedPkg.default_equipment) {
+      const defaultIds = selectedPkg.default_equipment.map((item) => item.id);
+      setActiveEquipmentIds(defaultIds);
+    }
+  }, [selectedPackageId, packages]);
+
   // Toggle equipment handler
   const handleToggleEquipment = (id) => {
+    const item = equipment.find((eq) => eq.id === id);
+    if (item && item.is_mandatory) {
+      return; // Do not allow toggling off mandatory items
+    }
+    
     setActiveEquipmentIds((prev) => 
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
+
 
   // Save current configuration to DB
   const handleSaveConfiguration = async (name) => {

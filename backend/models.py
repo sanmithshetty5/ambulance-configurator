@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Table, Boolean
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Table, Boolean, Float
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -28,9 +28,13 @@ class Vehicle(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     base_cost = Column(Numeric(precision=12, scale=2), nullable=False)
+    length_mm = Column(Float, nullable=True)
+    width_mm = Column(Float, nullable=True)
+    height_mm = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     configurations = relationship("SavedConfiguration", back_populates="vehicle")
+
 
 class AmbulanceType(Base):
     __tablename__ = "ambulance_types"
@@ -58,6 +62,18 @@ class Equipment(Base):
     model_url = Column(String(255), nullable=False)
     is_mandatory = Column(Boolean, default=False)
     category = Column(String(50), nullable=True)
+
+    # Dimension and 3D positioning columns
+    width_mm = Column(Float, nullable=True)
+    height_mm = Column(Float, nullable=True)
+    depth_mm = Column(Float, nullable=True)
+    position_x = Column(Float, nullable=True)
+    position_y = Column(Float, nullable=True)
+    position_z = Column(Float, nullable=True)
+    rotation_x = Column(Float, nullable=True)
+    rotation_y = Column(Float, nullable=True)
+    rotation_z = Column(Float, nullable=True)
+
 
     @property
     def model_file(self):
