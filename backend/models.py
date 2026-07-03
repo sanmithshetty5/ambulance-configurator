@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import uuid
 import json
 from datetime import datetime
@@ -54,6 +55,13 @@ class Manufacturer(Base):
 
     vehicles = relationship("Vehicle", back_populates="manufacturer")
 
+=======
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Float, JSON
+from sqlalchemy.orm import relationship
+from database import Base
+
+>>>>>>> 80be7fd (Updated ambulance model and oxygen cylinder positioning)
 class Vehicle(Base):
     __tablename__ = "vehicles"
 
@@ -279,3 +287,17 @@ class SavedConfiguration(Base):
     @property
     def equipment_ids(self):
         return [eq.id for eq in self.equipment]
+    instances = relationship("ConfigurationInstance", back_populates="configuration", cascade="all, delete-orphan")
+
+class ConfigurationInstance(Base):
+    __tablename__ = "configuration_instances"
+
+    id = Column(Integer, primary_key=True, index=True)
+    configuration_id = Column(Integer, ForeignKey("saved_configurations.id", ondelete="CASCADE"), nullable=False)
+    equipment_id = Column(Integer, ForeignKey("equipment.id"), nullable=False)
+    position_x = Column(Float, nullable=False)
+    position_y = Column(Float, nullable=False)
+    position_z = Column(Float, nullable=False)
+
+    configuration = relationship("SavedConfiguration", back_populates="instances")
+    equipment = relationship("Equipment")

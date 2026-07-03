@@ -17,13 +17,16 @@ function App() {
   // Selection states
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [selectedPackageId, setSelectedPackageId] = useState(null);
-  const [activeEquipmentIds, setActiveEquipmentIds] = useState([]);
   
   // App UI states
   const [isSaving, setIsSaving] = useState(false);
   const [notification, setNotification] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  
+  // Viewer states
+  const [instances, setInstances] = useState([]);
+  const [mountLimits, setMountLimits] = useState({});
 
   // Fetch initial seed data from FastAPI server
   useEffect(() => {
@@ -62,7 +65,6 @@ function App() {
     fetchData();
   }, []);
 
-  // Show notification helpers
   const triggerNotification = (message) => {
     setNotification(message);
     setTimeout(() => {
@@ -73,50 +75,85 @@ function App() {
   const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId);
   const selectedPackage = packages.find((p) => p.id === selectedPackageId);
   
-  // Search for the active conversion spec
   const activeConversion = conversions.find(
     (c) => c.vehicle_id === selectedVehicleId && c.ambulance_type_id === selectedPackageId
   );
   const isUnsupported = !activeConversion;
 
-  // When selected active conversion changes, automatically load its default equipment set
+  // When selected active conversion changes, load its default equipment instances
   useEffect(() => {
     if (isUnsupported || !activeConversion) {
-      setActiveEquipmentIds([]);
+      setInstances([]);
       return;
     }
     
     if (activeConversion.default_equipment) {
-      const defaultIds = activeConversion.default_equipment.map((item) => item.id);
-      setActiveEquipmentIds(defaultIds);
+      const defaultInstances = activeConversion.default_equipment.map((item) => ({
+        instanceId: crypto.randomUUID(),
+        equipmentId: item.id,
+        mountPoint: item.mount_point,
+        modelFile: item.model_file,
+        name: item.name,
+        unitCost: Number(item.unit_cost),
+        width_mm: item.width_mm,
+        height_mm: item.height_mm,
+        depth_mm: item.depth_mm,
+        position_x: item.position_x,
+        position_y: item.position_y,
+        position_z: item.position_z,
+        rotation_x: item.rotation_x,
+        rotation_y: item.rotation_y,
+        rotation_z: item.rotation_z,
+        position: null
+      }));
+      setInstances(defaultInstances);
+    } else {
+      setInstances([]);
     }
   }, [activeConversion, isUnsupported]);
 
-  // Toggle equipment handler
-  const handleToggleEquipment = (id) => {
-    const item = equipment.find((eq) => eq.id === id);
-    if (item && item.is_mandatory) {
-      // If the item is mandatory inside the active conversion, do not allow toggling off
-      if (activeConversion && activeConversion.default_equipment.some((d) => d.id === id)) {
-        return; 
-      }
-    }
-    
-    setActiveEquipmentIds((prev) => 
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+  const handleAddInstance = (item) => {
+    const newInstance = {
+      instanceId: crypto.randomUUID(),
+      equipmentId: item.id,
+      mountPoint: item.mount_point,
+      modelFile: item.model_file,
+      name: item.name,
+      unitCost: Number(item.unit_cost),
+      width_mm: item.width_mm,
+      height_mm: item.height_mm,
+      depth_mm: item.depth_mm,
+      position_x: item.position_x,
+      position_y: item.position_y,
+      position_z: item.position_z,
+      rotation_x: item.rotation_x,
+      rotation_y: item.rotation_y,
+      rotation_z: item.rotation_z,
+      position: null
+    };
+    setInstances((prev) => [...prev, newInstance]);
+  };
+  
+  const handleRemoveInstance = (instanceId) => {
+    setInstances((prev) => prev.filter(i => i.instanceId !== instanceId));
   };
 
-  // Save current configuration to DB
   const handleSaveConfiguration = async (name) => {
     if (isUnsupported || !activeConversion) return;
 
     try {
       setIsSaving(true);
+      // For compatibility with HEAD's schema, pass both equipment_ids and instances
+      const equipmentIds = [...new Set(instances.map(i => i.equipmentId))];
+      
       const payload = {
         name,
         conversion_spec_id: activeConversion.id,
-        equipment_ids: activeEquipmentIds,
+        equipment_ids: equipmentIds,
+        instances: instances.map(i => ({
+            equipment_id: i.equipmentId,
+            position: [i.position_x || 0, i.position_y || 0, i.position_z || 0]
+        })),
         total_cost: totalCost
       };
 
@@ -130,28 +167,42 @@ function App() {
     }
   };
 
-  // Cost calculation (Calculated live on frontend)
   const baseCost = selectedVehicle ? Number(selectedVehicle.base_cost) : 0;
   const conversionCost = activeConversion ? Number(activeConversion.conversion_cost) : 0;
   
-  // Pricing model: Only charge extra for optional equipment NOT included by default in the conversion
-  const selectedEquipmentItems = equipment.filter((item) => activeEquipmentIds.includes(item.id));
-  const optionalEquipmentCost = selectedEquipmentItems
-    .filter((item) => {
-      if (!activeConversion || !activeConversion.default_equipment) return true;
-      const isBundled = activeConversion.default_equipment.some((d) => d.id === item.id);
-      return !isBundled;
-    })
-    .reduce((sum, item) => sum + Number(item.unit_cost), 0);
+  // Pricing model: Only charge extra for optional equipment NOT included by default
+  // In the instances model, we count how many defaults there are, and charge for any extras
+  let optionalEquipmentCost = 0;
+  if (activeConversion && activeConversion.default_equipment) {
+    const defaultCounts = {};
+    activeConversion.default_equipment.forEach(item => {
+        defaultCounts[item.id] = (defaultCounts[item.id] || 0) + 1;
+    });
+    
+    const instanceCounts = {};
+    instances.forEach(inst => {
+        instanceCounts[inst.equipmentId] = (instanceCounts[inst.equipmentId] || 0) + 1;
+    });
+    
+    Object.keys(instanceCounts).forEach(eqId => {
+        const id = parseInt(eqId);
+        const count = instanceCounts[id];
+        const defaultCount = defaultCounts[id] || 0;
+        const extraCount = Math.max(0, count - defaultCount);
+        
+        if (extraCount > 0) {
+            const item = equipment.find(e => e.id === id);
+            if (item) {
+                optionalEquipmentCost += (Number(item.unit_cost) * extraCount);
+            }
+        }
+    });
+  } else {
+    // If no defaults, charge for everything
+    optionalEquipmentCost = instances.reduce((sum, item) => sum + item.unitCost, 0);
+  }
 
   const totalCost = baseCost + conversionCost + optionalEquipmentCost;
-
-  // Build active equipment map for the 3D Viewer: { mount_name: boolean }
-  const activeEquipmentMap = {};
-  equipment.forEach((item) => {
-    activeEquipmentMap[item.mount_point] = activeEquipmentIds.includes(item.id);
-  });
-
 
   return (
     <div className="app-container">
@@ -161,7 +212,6 @@ function App() {
         </div>
       )}
 
-      {/* Brand Header */}
       <header className="app-header">
         <div className="brand-container">
           <div className="brand-icon">A</div>
@@ -170,7 +220,6 @@ function App() {
         </div>
       </header>
 
-      {/* Main Layout split into Configurator & 3D Viewer */}
       <main className="app-content">
         <section className="configurator-sidebar">
           {isLoadingData ? (
@@ -185,14 +234,12 @@ function App() {
             </div>
           ) : (
             <>
-              {/* Vehicle Dropdown */}
               <VehicleSelector 
                 vehicles={vehicles}
                 selectedVehicleId={selectedVehicleId}
                 onSelectVehicle={setSelectedVehicleId}
               />
 
-              {/* Package Selector */}
               <AmbulanceTypeSelector
                 packages={packages}
                 selectedPackageId={selectedPackageId}
@@ -201,7 +248,6 @@ function App() {
                 selectedVehicleId={selectedVehicleId}
               />
 
-              {/* Equipment Toggles & Cost Summary or Warning Card */}
               {isUnsupported ? (
                 <div className="unsupported-alert-card">
                   <div className="unsupported-alert-icon">⚠️</div>
@@ -217,15 +263,18 @@ function App() {
                 <>
                   <EquipmentPanel
                     equipment={equipment}
-                    activeEquipmentIds={activeEquipmentIds}
-                    onToggleEquipment={handleToggleEquipment}
+                    instances={instances}
+                    mountLimits={mountLimits}
+                    activeConversion={activeConversion}
+                    onAddInstance={handleAddInstance}
+                    onRemoveInstance={handleRemoveInstance}
                   />
 
                   <CostSummary
                     selectedVehicle={selectedVehicle}
                     selectedPackage={selectedPackage}
                     activeConversion={activeConversion}
-                    selectedEquipmentItems={selectedEquipmentItems}
+                    selectedEquipmentItems={[]}
                     optionalEquipmentCost={optionalEquipmentCost}
                     totalCost={totalCost}
                     isUnsupported={isUnsupported}
@@ -238,11 +287,11 @@ function App() {
           )}
         </section>
 
-        {/* 3D Viewport Column */}
         <section style={{ flex: 1, position: 'relative' }}>
           <Viewer3D 
-            activeEquipmentMap={activeEquipmentMap}
-            equipment={equipment}
+            instances={instances}
+            selectedVehicle={selectedVehicle}
+            onMountLimitsUpdate={setMountLimits}
           />
         </section>
       </main>

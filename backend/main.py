@@ -83,7 +83,7 @@ def seed_database():
                 name="Tata Winger Ambulance Chassis", 
                 manufacturer_id=m_tata.id, 
                 base_cost=400000.00,
-                length_mm=4920, width_mm=1905, height_mm=2670
+                length_mm=4940, width_mm=1950, height_mm=2670
             )
             v_traveller = models.Vehicle(
                 name="Force Traveller Ambulance Chassis", 
@@ -245,7 +245,7 @@ def seed_database():
                 mount_point="mount_oxygen_cylinder", model_url="oxygen_cylinder.glb",
                 width_mm=230, height_mm=760, depth_mm=230,
                 position_x=-0.65, position_y=-0.35, position_z=0.5,
-                rotation_x=1.5708, rotation_y=0.0, rotation_z=0.0
+                rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
 
             eq_cabinet = models.Equipment(
@@ -366,7 +366,6 @@ def seed_database():
             # ALS Conversions: All 6 equipment items
             spec_winger_als.default_equipment.extend([eq_stretcher, eq_oxygen, eq_cabinet, eq_seating, eq_lighting, eq_storage])
             spec_traveller_als.default_equipment.extend([eq_stretcher, eq_oxygen, eq_cabinet, eq_seating, eq_lighting, eq_storage])
-
             db.commit()
             print("Database production seed completed successfully.")
         else:

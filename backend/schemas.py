@@ -130,6 +130,19 @@ class ConversionSpecResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+# Configuration Instance Schemas
+class ConfigurationInstanceSchema(BaseModel):
+    equipment_id: int
+    position: List[float]  # [x, y, z]
+
+class ConfigurationInstanceResponse(BaseModel):
+    id: int
+    equipment_id: int
+    position_x: float
+    position_y: float
+    position_z: float
+    model_config = ConfigDict(from_attributes=True)
+
 # Configuration Schemas
 class ConfigurationCreate(BaseModel):
     name: str
@@ -143,7 +156,7 @@ class ConfigurationResponse(BaseModel):
     conversion_spec_id: int
     vehicle_id: int
     package_id: int
-    equipment_ids: List[int]
+    instances: List[ConfigurationInstanceSchema]
     total_cost: Decimal
     status: str
     share_token: str
@@ -151,6 +164,7 @@ class ConfigurationResponse(BaseModel):
     conversion_spec: ConversionSpecResponse
     equipment: List[EquipmentResponse]
 
+    instances: List[ConfigurationInstanceResponse] = []
     model_config = ConfigDict(from_attributes=True)
 
     @field_validator("vehicle_id", mode="before")

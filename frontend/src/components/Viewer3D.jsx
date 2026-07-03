@@ -1,63 +1,100 @@
 import React, { Suspense, useState, useEffect } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Center, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, useGLTF, Center, Html, Clone } from '@react-three/drei';
 
-// Individual Equipment Component
-const EquipmentModel = ({ modelFile, position, rotation }) => {
+// Individual Equipment Component locked to a specific position
+const EquipmentFixed = ({ modelFile, position, rotation }) => {
   const { scene } = useGLTF(`/models/${modelFile}`);
   
-  // Clone the scene so that each equipment piece has its own unique instance in the Three.js tree
-  const clonedScene = React.useMemo(() => scene.clone(), [scene]);
-  
+  // Applies the exact rotation set on the Empty object in Blender.
+  // Scale is set to [1, 1, 1] assuming all models are exported at 1:1 real-world scale.
   return (
-    <primitive 
-      object={clonedScene} 
+    <Clone 
+      object={scene} 
       position={position} 
-      rotation={rotation} 
+      rotation={rotation || [0, 0, 0]} 
+      scale={[1, 1, 1]} 
     />
   );
 };
 
 // Ambulance Shell + Mounts Component
-const AmbulanceScene = ({ activeEquipmentMap, equipment }) => {
+const AmbulanceScene = ({ instances, onMountLimitsUpdate }) => {
   const { scene } = useGLTF('/models/ambulance_shell.glb');
   const [mounts, setMounts] = useState({});
 
   useEffect(() => {
     const extractedMounts = {};
+    const limits = {};
+
+    // Force update of the scene matrix to ensure world coordinates are accurate
+    scene.updateMatrixWorld(true);
+
     scene.traverse((node) => {
       // Find objects starting with 'mount_'
       if (node.name && node.name.startsWith('mount_')) {
-        extractedMounts[node.name] = {
-          position: node.position.clone(),
-          rotation: node.rotation.clone()
-        };
+        const prefixMatch = node.name.match(/^(mount_.*?)_\d+$/);
+        const prefix = prefixMatch ? prefixMatch[1] : node.name;
+
+        if (!extractedMounts[prefix]) {
+          extractedMounts[prefix] = [];
+          limits[prefix] = 0;
+        }
+
+        // Extract WORLD position and rotation (ignores how Blender nests the nodes)
+        const worldPos = new THREE.Vector3();
+        const worldQuat = new THREE.Quaternion();
+        const worldEuler = new THREE.Euler();
+        
+        node.getWorldPosition(worldPos);
+        node.getWorldQuaternion(worldQuat);
+        worldEuler.setFromQuaternion(worldQuat);
+
+        extractedMounts[prefix].push({
+          position: worldPos.toArray(),
+          rotation: worldEuler.toArray().slice(0, 3)
+        });
+        limits[prefix] += 1;
       }
     });
+
     setMounts(extractedMounts);
-  }, [scene]);
+    if (onMountLimitsUpdate) {
+      onMountLimitsUpdate(limits);
+    }
+  }, [scene, onMountLimitsUpdate]);
+
+  // Group instances by prefix
+  const groupedInstances = {};
+  instances.forEach(inst => {
+    if (!groupedInstances[inst.mountPoint]) groupedInstances[inst.mountPoint] = [];
+    groupedInstances[inst.mountPoint].push(inst);
+  });
 
   return (
-    <group>
+    // Your model is already upright under identity scale/rotation
+    <group rotation={[0, 0, 0]} scale={[1, 1, 1]}>
       {/* Base Ambulance Shell */}
-      <primitive object={scene} />
+      <Clone object={scene} />
 
-      {/* Conditionally rendered equipment models at extracted mount coordinates */}
-      {equipment.map((item) => {
-        const isActive = activeEquipmentMap[item.mount_point];
-        const mount = mounts[item.mount_point];
-        
-        if (!isActive || !mount) return null;
-        
-        return (
-          <EquipmentModel
-            key={item.id}
-            modelFile={item.model_file}
-            position={mount.position}
-            rotation={mount.rotation}
-          />
-        );
+      {/* Render equipment instances snapped to slots */}
+      {Object.entries(groupedInstances).map(([prefix, items]) => {
+        const availableSlots = mounts[prefix] || [];
+        return items.map((item, index) => {
+          const slot = availableSlots[index];
+          if (!slot) return null; // Exceeds physical slots
+
+          return (
+            <Suspense key={item.instanceId} fallback={null}>
+              <EquipmentFixed
+                modelFile={item.modelFile}
+                position={slot.position}
+                rotation={slot.rotation}
+              />
+            </Suspense>
+          );
+        });
       })}
     </group>
   );
@@ -101,7 +138,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const Viewer3D = ({ activeEquipmentMap, equipment }) => {
+const Viewer3D = ({ instances, onMountLimitsUpdate }) => {
   return (
     <ErrorBoundary>
       <div className="viewer-container">
@@ -133,13 +170,14 @@ const Viewer3D = ({ activeEquipmentMap, equipment }) => {
 
             <Center>
               <AmbulanceScene 
-                activeEquipmentMap={activeEquipmentMap} 
-                equipment={equipment} 
+                instances={instances} 
+                onMountLimitsUpdate={onMountLimitsUpdate}
               />
             </Center>
 
             {/* User controls to Rotate, Pan, Zoom */}
             <OrbitControls 
+              makeDefault
               enablePan={true}
               enableZoom={true}
               minDistance={2}
@@ -151,9 +189,11 @@ const Viewer3D = ({ activeEquipmentMap, equipment }) => {
         </Canvas>
 
         <div className="viewer-controls-hint">
-          <span>🖱️ Left Click + Drag to Rotate</span>
-          <span>🖱️ Right Click + Drag to Pan</span>
+          <span>🖱️ Left Click BG + Drag to Rotate</span>
+          <span>🖱️ Right Click BG + Drag to Pan</span>
           <span>📜 Scroll to Zoom</span>
+          <br/>
+          <span>(Objects are automatically snapped to fixed slots)</span>
         </div>
       </div>
     </ErrorBoundary>

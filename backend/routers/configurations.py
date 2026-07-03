@@ -38,6 +38,18 @@ def create_configuration(config: schemas.ConfigurationCreate, db: Session = Depe
             )
         db_config.equipment.extend(equipment_items)
         
+    db.flush()
+
+    if hasattr(config, 'instances') and config.instances:
+        for instance_data in config.instances:
+            db_instance = models.ConfigurationInstance(
+                configuration_id=db_config.id,
+                equipment_id=instance_data.equipment_id,
+                position_x=instance_data.position[0],
+                position_y=instance_data.position[1],
+                position_z=instance_data.position[2]
+            )
+            db.add(db_instance)
     db.commit()
     db.refresh(db_config)
     return db_config
