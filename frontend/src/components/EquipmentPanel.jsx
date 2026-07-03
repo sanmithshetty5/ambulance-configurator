@@ -12,11 +12,19 @@ const EquipmentPanel = ({ equipment, activeEquipmentIds, onToggleEquipment }) =>
   // Helper to group items
   const groupedEquipment = {};
   equipment.forEach((item) => {
-    const cat = item.category || 'medical';
-    if (!groupedEquipment[cat]) {
-      groupedEquipment[cat] = [];
+    let catKey = 'medical';
+    if (item.category && item.category.name) {
+      const name = item.category.name.toLowerCase();
+      if (name.includes('medical')) catKey = 'medical';
+      else if (name.includes('safety') || name.includes('signaling')) catKey = 'safety';
+      else if (name.includes('seating') || name.includes('attendant')) catKey = 'comfort';
+      else if (name.includes('cabinet') || name.includes('storage')) catKey = 'storage';
     }
-    groupedEquipment[cat].push(item);
+    
+    if (!groupedEquipment[catKey]) {
+      groupedEquipment[catKey] = [];
+    }
+    groupedEquipment[catKey].push(item);
   });
 
   return (

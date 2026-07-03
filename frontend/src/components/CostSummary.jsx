@@ -3,8 +3,11 @@ import React, { useState } from 'react';
 const CostSummary = ({ 
   selectedVehicle, 
   selectedPackage, 
+  activeConversion,
   selectedEquipmentItems, 
+  optionalEquipmentCost,
   totalCost, 
+  isUnsupported,
   onSaveConfiguration,
   isSaving
 }) => {
@@ -12,12 +15,15 @@ const CostSummary = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!configName.trim()) return;
+    if (!configName.trim() || isUnsupported) return;
     onSaveConfiguration(configName.trim());
     setConfigName('');
   };
 
-  const equipmentCost = selectedEquipmentItems.reduce((sum, item) => sum + Number(item.unit_cost), 0);
+  const bundledItems = activeConversion && activeConversion.default_equipment 
+    ? selectedEquipmentItems.filter(item => activeConversion.default_equipment.some(d => d.id === item.id))
+    : [];
+  const optionalItems = selectedEquipmentItems.filter(item => !bundledItems.some(d => d.id === item.id));
 
   return (
     <div className="config-card">
@@ -31,16 +37,22 @@ const CostSummary = ({
             <span>₹{Number(selectedVehicle.base_cost).toLocaleString('en-IN')}</span>
           </div>
         )}
-        {selectedPackage && (
+        {activeConversion && (
           <div className="cost-row">
-            <span>Package ({selectedPackage.name})</span>
-            <span>₹{Number(selectedPackage.package_cost).toLocaleString('en-IN')}</span>
+            <span>Conversion Cost ({selectedPackage?.name})</span>
+            <span>₹{Number(activeConversion.conversion_cost).toLocaleString('en-IN')}</span>
           </div>
         )}
-        {selectedEquipmentItems.length > 0 && (
+        {bundledItems.length > 0 && (
+          <div className="cost-row" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            <span>└ Bundled Tools ({bundledItems.length} items)</span>
+            <span style={{ color: '#22c55e', fontWeight: 500 }}>Included</span>
+          </div>
+        )}
+        {optionalItems.length > 0 && (
           <div className="cost-row">
-            <span>Equipment ({selectedEquipmentItems.length} items)</span>
-            <span>+ ₹{equipmentCost.toLocaleString('en-IN')}</span>
+            <span>Optional Upgrades ({optionalItems.length} items)</span>
+            <span>+ ₹{optionalEquipmentCost.toLocaleString('en-IN')}</span>
           </div>
         )}
         <div className="cost-row total">
@@ -56,13 +68,13 @@ const CostSummary = ({
           className="text-input"
           value={configName}
           onChange={(e) => setConfigName(e.target.value)}
-          disabled={isSaving || !selectedVehicle}
+          disabled={isSaving || isUnsupported || !selectedVehicle}
           required
         />
         <button 
           type="submit" 
           className="btn-primary" 
-          disabled={isSaving || !selectedVehicle || !selectedPackage || !configName.trim()}
+          disabled={isSaving || isUnsupported || !selectedVehicle || !selectedPackage || !configName.trim()}
         >
           {isSaving ? (
             <>

@@ -1,7 +1,43 @@
 from pydantic import BaseModel, ConfigDict, field_validator
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from decimal import Decimal
 from datetime import datetime
+
+# Manufacturer Schema
+class ManufacturerResponse(BaseModel):
+    id: int
+    name: str
+    country: str
+    website: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+# Brand Schema
+class BrandResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+# Equipment Category Schema
+class EquipmentCategoryResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+# Certification Schema
+class CertificationResponse(BaseModel):
+    id: int
+    name: str
+    authority: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+# Conversion Feature Schema
+class ConversionFeatureResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
 
 # Vehicle Schemas
 class VehicleBase(BaseModel):
@@ -13,6 +49,7 @@ class VehicleBase(BaseModel):
 
 class VehicleResponse(VehicleBase):
     id: int
+    manufacturer: ManufacturerResponse
     model_config = ConfigDict(from_attributes=True)
 
 # Equipment Schemas
@@ -22,7 +59,16 @@ class EquipmentBase(BaseModel):
     unit_cost: Decimal
     model_url: str
     is_mandatory: bool
-    category: Optional[str] = None
+    sku: str
+    hsn_code: str
+    gst_rate: Decimal
+    warranty_months: int
+    stock_status: str
+    lead_time_days: int
+    brochure_url: Optional[str] = None
+    manual_url: Optional[str] = None
+    image_url: Optional[str] = None
+    compatibility: Optional[str] = None
     width_mm: Optional[float] = None
     height_mm: Optional[float] = None
     depth_mm: Optional[float] = None
@@ -33,9 +79,13 @@ class EquipmentBase(BaseModel):
     rotation_y: Optional[float] = None
     rotation_z: Optional[float] = None
 
-
 class EquipmentResponse(EquipmentBase):
     id: int
+    category: EquipmentCategoryResponse
+    brand: BrandResponse
+    certifications: List[CertificationResponse] = []
+    specifications: Dict[str, Any] = {}
+    technical_features: List[str] = []
     model_file: str  # Kept for frontend compatibility
 
     model_config = ConfigDict(from_attributes=True)
@@ -43,7 +93,6 @@ class EquipmentResponse(EquipmentBase):
     @field_validator("model_file", mode="before")
     @classmethod
     def set_model_file(cls, v, info):
-        # If model_file is not passed, fallback to using model_url (which maps to the file name)
         if not v and "model_url" in info.data:
             return info.data["model_url"]
         return v or ""
@@ -51,40 +100,68 @@ class EquipmentResponse(EquipmentBase):
 # Package / Ambulance Type Schemas
 class PackageBase(BaseModel):
     name: str
-    package_cost: Decimal
+    code: str
     description: Optional[str] = None
 
 class PackageResponse(PackageBase):
     id: int
+    model_config = ConfigDict(from_attributes=True)
+
+# Conversion Specification Schema
+class ConversionSpecResponse(BaseModel):
+    id: int
+    vehicle_id: int
+    ambulance_type_id: int
+    patient_length_mm: float
+    patient_width_mm: float
+    patient_height_mm: float
+    patient_volume_liters: Optional[float] = None
+    conversion_cost: Decimal
+    payload_capacity_kg: Optional[float] = None
+    electrical_capacity_ah: Optional[float] = None
+    oxygen_mounting_capacity_liters: Optional[float] = None
+    hvac_type: Optional[str] = None
+    description: Optional[str] = None
+    
+    vehicle: VehicleResponse
+    ambulance_type: PackageResponse
+    features: List[ConversionFeatureResponse] = []
     default_equipment: List[EquipmentResponse] = []
+
     model_config = ConfigDict(from_attributes=True)
 
 # Configuration Schemas
 class ConfigurationCreate(BaseModel):
     name: str
-    vehicle_id: int
-    package_id: int  # Frontend sends package_id
+    conversion_spec_id: int
     equipment_ids: List[int]
     total_cost: Decimal
 
 class ConfigurationResponse(BaseModel):
     id: int
     name: str
+    conversion_spec_id: int
     vehicle_id: int
-    package_id: int  # Map ambulance_type_id to package_id for frontend
-    equipment_ids: List[int]  # Expose list of equipment IDs
+    package_id: int
+    equipment_ids: List[int]
     total_cost: Decimal
     status: str
     share_token: str
     created_at: datetime
+    conversion_spec: ConversionSpecResponse
     equipment: List[EquipmentResponse]
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_validator("vehicle_id", mode="before")
+    @classmethod
+    def get_vehicle_id(cls, v, info):
+        return v
+
     @field_validator("package_id", mode="before")
     @classmethod
     def get_package_id(cls, v, info):
-        # When serializing a SavedConfiguration model, it contains ambulance_type_id
         return v
+
 
 

@@ -12,6 +12,7 @@ function App() {
   const [vehicles, setVehicles] = useState([]);
   const [packages, setPackages] = useState([]);
   const [equipment, setEquipment] = useState([]);
+  const [conversions, setConversions] = useState([]);
   
   // Selection states
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
@@ -29,15 +30,17 @@ function App() {
     const fetchData = async () => {
       try {
         setIsLoadingData(true);
-        const [vehiclesRes, packagesRes, equipmentRes] = await Promise.all([
+        const [vehiclesRes, packagesRes, equipmentRes, conversionsRes] = await Promise.all([
           axios.get(`${API_BASE}/vehicles`),
           axios.get(`${API_BASE}/packages`),
-          axios.get(`${API_BASE}/equipment`)
+          axios.get(`${API_BASE}/equipment`),
+          axios.get(`${API_BASE}/conversions`)
         ]);
         
         setVehicles(vehiclesRes.data);
         setPackages(packagesRes.data);
         setEquipment(equipmentRes.data);
+        setConversions(conversionsRes.data);
         
         // Auto-select first vehicle and package if available
         if (vehiclesRes.data.length > 0) {
@@ -67,22 +70,36 @@ function App() {
     }, 3500);
   };
 
-  // When selected package changes, automatically load its default equipment set
+  const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId);
+  const selectedPackage = packages.find((p) => p.id === selectedPackageId);
+  
+  // Search for the active conversion spec
+  const activeConversion = conversions.find(
+    (c) => c.vehicle_id === selectedVehicleId && c.ambulance_type_id === selectedPackageId
+  );
+  const isUnsupported = !activeConversion;
+
+  // When selected active conversion changes, automatically load its default equipment set
   useEffect(() => {
-    if (!selectedPackageId || packages.length === 0) return;
+    if (isUnsupported || !activeConversion) {
+      setActiveEquipmentIds([]);
+      return;
+    }
     
-    const selectedPkg = packages.find((p) => p.id === selectedPackageId);
-    if (selectedPkg && selectedPkg.default_equipment) {
-      const defaultIds = selectedPkg.default_equipment.map((item) => item.id);
+    if (activeConversion.default_equipment) {
+      const defaultIds = activeConversion.default_equipment.map((item) => item.id);
       setActiveEquipmentIds(defaultIds);
     }
-  }, [selectedPackageId, packages]);
+  }, [activeConversion, isUnsupported]);
 
   // Toggle equipment handler
   const handleToggleEquipment = (id) => {
     const item = equipment.find((eq) => eq.id === id);
     if (item && item.is_mandatory) {
-      return; // Do not allow toggling off mandatory items
+      // If the item is mandatory inside the active conversion, do not allow toggling off
+      if (activeConversion && activeConversion.default_equipment.some((d) => d.id === id)) {
+        return; 
+      }
     }
     
     setActiveEquipmentIds((prev) => 
@@ -90,17 +107,15 @@ function App() {
     );
   };
 
-
   // Save current configuration to DB
   const handleSaveConfiguration = async (name) => {
-    if (!selectedVehicleId || !selectedPackageId) return;
+    if (isUnsupported || !activeConversion) return;
 
     try {
       setIsSaving(true);
       const payload = {
         name,
-        vehicle_id: selectedVehicleId,
-        package_id: selectedPackageId,
+        conversion_spec_id: activeConversion.id,
         equipment_ids: activeEquipmentIds,
         total_cost: totalCost
       };
@@ -116,20 +131,27 @@ function App() {
   };
 
   // Cost calculation (Calculated live on frontend)
-  const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId);
-  const selectedPackage = packages.find((p) => p.id === selectedPackageId);
-  const selectedEquipmentItems = equipment.filter((item) => activeEquipmentIds.includes(item.id));
-
   const baseCost = selectedVehicle ? Number(selectedVehicle.base_cost) : 0;
-  const packageCost = selectedPackage ? Number(selectedPackage.package_cost) : 0;
-  const equipmentCost = selectedEquipmentItems.reduce((sum, item) => sum + Number(item.unit_cost), 0);
-  const totalCost = baseCost + packageCost + equipmentCost;
+  const conversionCost = activeConversion ? Number(activeConversion.conversion_cost) : 0;
+  
+  // Pricing model: Only charge extra for optional equipment NOT included by default in the conversion
+  const selectedEquipmentItems = equipment.filter((item) => activeEquipmentIds.includes(item.id));
+  const optionalEquipmentCost = selectedEquipmentItems
+    .filter((item) => {
+      if (!activeConversion || !activeConversion.default_equipment) return true;
+      const isBundled = activeConversion.default_equipment.some((d) => d.id === item.id);
+      return !isBundled;
+    })
+    .reduce((sum, item) => sum + Number(item.unit_cost), 0);
+
+  const totalCost = baseCost + conversionCost + optionalEquipmentCost;
 
   // Build active equipment map for the 3D Viewer: { mount_name: boolean }
   const activeEquipmentMap = {};
   equipment.forEach((item) => {
     activeEquipmentMap[item.mount_point] = activeEquipmentIds.includes(item.id);
   });
+
 
   return (
     <div className="app-container">
@@ -175,24 +197,43 @@ function App() {
                 packages={packages}
                 selectedPackageId={selectedPackageId}
                 onSelectPackage={setSelectedPackageId}
+                conversions={conversions}
+                selectedVehicleId={selectedVehicleId}
               />
 
-              {/* Equipment Toggles */}
-              <EquipmentPanel
-                equipment={equipment}
-                activeEquipmentIds={activeEquipmentIds}
-                onToggleEquipment={handleToggleEquipment}
-              />
+              {/* Equipment Toggles & Cost Summary or Warning Card */}
+              {isUnsupported ? (
+                <div className="unsupported-alert-card">
+                  <div className="unsupported-alert-icon">⚠️</div>
+                  <h4 className="unsupported-alert-title">Configuration Unsupported</h4>
+                  <p className="unsupported-alert-text">
+                    The combination of <strong>{selectedVehicle?.name}</strong> and <strong>{selectedPackage?.name}</strong> is not supported by our engineering department.
+                  </p>
+                  <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: 'var(--text-muted)' }}>
+                    Compact chassis structures (like Maruti Suzuki Eeco) do not meet the interior compartment volume, payload limits, and electrical power generation specs required for Advanced Life Support (ALS) medical equipment conversions. Please choose a PTA or BLS package.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <EquipmentPanel
+                    equipment={equipment}
+                    activeEquipmentIds={activeEquipmentIds}
+                    onToggleEquipment={handleToggleEquipment}
+                  />
 
-              {/* Cost Summary & Save button */}
-              <CostSummary
-                selectedVehicle={selectedVehicle}
-                selectedPackage={selectedPackage}
-                selectedEquipmentItems={selectedEquipmentItems}
-                totalCost={totalCost}
-                onSaveConfiguration={handleSaveConfiguration}
-                isSaving={isSaving}
-              />
+                  <CostSummary
+                    selectedVehicle={selectedVehicle}
+                    selectedPackage={selectedPackage}
+                    activeConversion={activeConversion}
+                    selectedEquipmentItems={selectedEquipmentItems}
+                    optionalEquipmentCost={optionalEquipmentCost}
+                    totalCost={totalCost}
+                    isUnsupported={isUnsupported}
+                    onSaveConfiguration={handleSaveConfiguration}
+                    isSaving={isSaving}
+                  />
+                </>
+              )}
             </>
           )}
         </section>

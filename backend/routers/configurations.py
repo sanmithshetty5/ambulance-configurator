@@ -8,22 +8,20 @@ router = APIRouter(prefix="/configurations", tags=["configurations"])
 
 @router.post("", response_model=schemas.ConfigurationResponse, status_code=status.HTTP_201_CREATED)
 def create_configuration(config: schemas.ConfigurationCreate, db: Session = Depends(get_db)):
-    # Validate vehicle_id
-    vehicle = db.query(models.Vehicle).filter(models.Vehicle.id == config.vehicle_id).first()
-    if not vehicle:
-        raise HTTPException(status_code=400, detail=f"Vehicle with id {config.vehicle_id} does not exist.")
-        
-    # Validate package_id (maps to ambulance_types table)
-    package = db.query(models.AmbulanceType).filter(models.AmbulanceType.id == config.package_id).first()
-    if not package:
-        raise HTTPException(status_code=400, detail=f"Ambulance package with id {config.package_id} does not exist.")
+    # Validate conversion_spec_id
+    conversion_spec = db.query(models.ConversionSpec).filter(models.ConversionSpec.id == config.conversion_spec_id).first()
+    if not conversion_spec:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Conversion spec with id {config.conversion_spec_id} does not exist."
+        )
         
     # Save the configuration base fields
     db_config = models.SavedConfiguration(
         name=config.name,
-        vehicle_id=config.vehicle_id,
-        ambulance_type_id=config.package_id,
-        total_cost=config.total_cost
+        conversion_spec_id=config.conversion_spec_id,
+        total_cost=config.total_cost,
+        status="draft"
     )
     db.add(db_config)
     
