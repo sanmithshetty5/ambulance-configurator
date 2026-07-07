@@ -20,7 +20,7 @@ const EquipmentFixed = ({ modelFile, position, rotation }) => {
 };
 
 // Ambulance Shell + Mounts Component
-const AmbulanceScene = ({ instances, onMountLimitsUpdate }) => {
+const AmbulanceScene = ({ instances, selectedVehicle, onMountLimitsUpdate }) => {
   const { scene } = useGLTF('/models/ambulance_shell.glb');
   const [mounts, setMounts] = useState({});
 
@@ -72,25 +72,67 @@ const AmbulanceScene = ({ instances, onMountLimitsUpdate }) => {
     groupedInstances[inst.mountPoint].push(inst);
   });
 
+  // Base dimensions of the 3D model (Tata Winger real-world exterior dims)
+  const BASE_LENGTH = 4940; // Blender X
+  const BASE_WIDTH = 1950;  // Blender Y (Three Z)
+  const BASE_HEIGHT = 2670; // Blender Z (Three Y)
+  
+  // Calculate scale factors based on the user's explicit Blender mapping:
+  // Three.js X = Blender X (Length)
+  // Three.js Y = Blender Z (Height)
+  // Three.js Z = Blender Y (Width)
+  const scaleX = selectedVehicle?.length_mm ? selectedVehicle.length_mm / BASE_LENGTH : 1;
+  const scaleY = selectedVehicle?.height_mm ? selectedVehicle.height_mm / BASE_HEIGHT : 1;
+  const scaleZ = selectedVehicle?.width_mm ? selectedVehicle.width_mm / BASE_WIDTH : 1;
+
   return (
     // Your model is already upright under identity scale/rotation
     <group rotation={[0, 0, 0]} scale={[1, 1, 1]}>
-      {/* Base Ambulance Shell */}
-      <Clone object={scene} />
+      {/* Base Ambulance Shell scaled dynamically to match physical DB specs */}
+      <Clone object={scene} scale={[scaleX, scaleY, scaleZ]} />
 
-      {/* Render equipment instances snapped to slots */}
+      {/* Render equipment instances using DB coordinates or Blender empties */}
       {Object.entries(groupedInstances).map(([prefix, items]) => {
         const availableSlots = mounts[prefix] || [];
+        
         return items.map((item, index) => {
+          let pos, rot;
+          
           const slot = availableSlots[index];
-          if (!slot) return null; // Exceeds physical slots
+          if (slot) {
+            // Priority: Mount to exact empty nodes from Blender if they exist.
+            // We scale the empty's position by the dynamic vehicle scale factors.
+            pos = [
+              slot.position[0] * scaleX,
+              slot.position[1] * scaleY,
+              slot.position[2] * scaleZ
+            ];
+            // Do not override the empty's rotation, keep it as defined in Blender
+            rot = slot.rotation;
+          } else {
+            // Fallback: Use DB offset logic
+            const spacing = item.depth_mm ? (item.depth_mm / 1000) + 0.1 : 0.4;
+            const instanceOffset = index * spacing;
+            
+            pos = [
+              (item.position_x || 0) * scaleX,
+              (item.position_y || 0) * scaleY,
+              ((item.position_z || 0) + instanceOffset) * scaleZ
+            ];
+            
+            rot = [
+              item.rotation_x || 0,
+              item.rotation_y || 0,
+              item.rotation_z || 0
+            ];
+          }
 
           return (
             <Suspense key={item.instanceId} fallback={null}>
               <EquipmentFixed
                 modelFile={item.modelFile}
-                position={slot.position}
-                rotation={slot.rotation}
+                position={pos}
+                rotation={rot}
               />
             </Suspense>
           );
@@ -138,7 +180,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const Viewer3D = ({ instances, onMountLimitsUpdate }) => {
+const Viewer3D = ({ instances, selectedVehicle, onMountLimitsUpdate }) => {
   return (
     <ErrorBoundary>
       <div className="viewer-container">
@@ -170,7 +212,8 @@ const Viewer3D = ({ instances, onMountLimitsUpdate }) => {
 
             <Center>
               <AmbulanceScene 
-                instances={instances} 
+                instances={instances}
+                selectedVehicle={selectedVehicle}
                 onMountLimitsUpdate={onMountLimitsUpdate}
               />
             </Center>
