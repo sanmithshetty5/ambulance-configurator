@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+# <<<<<<< HEAD
 import uuid
 import json
 from datetime import datetime
@@ -55,13 +55,13 @@ class Manufacturer(Base):
 
     vehicles = relationship("Vehicle", back_populates="manufacturer")
 
-=======
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Float, JSON
-from sqlalchemy.orm import relationship
-from database import Base
+# =======
+# from datetime import datetime
+# from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Float, JSON
+# from sqlalchemy.orm import relationship
+# from database import Base
 
->>>>>>> 80be7fd (Updated ambulance model and oxygen cylinder positioning)
+# >>>>>>> 80be7fd (Updated ambulance model and oxygen cylinder positioning)
 class Vehicle(Base):
     __tablename__ = "vehicles"
 

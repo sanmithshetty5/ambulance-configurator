@@ -21,7 +21,7 @@ const EquipmentFixed = ({ modelFile, position, rotation }) => {
 
 // Ambulance Shell + Mounts Component
 const AmbulanceScene = ({ instances, selectedVehicle, onMountLimitsUpdate }) => {
-  const { scene } = useGLTF('/models/ambulance_shell.glb');
+  const { scene } = useGLTF('/models/ambulance_shelll.glb');
   const [mounts, setMounts] = useState({});
 
   useEffect(() => {
