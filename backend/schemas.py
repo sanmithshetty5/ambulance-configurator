@@ -64,6 +64,7 @@ class EquipmentBase(BaseModel):
     gst_rate: Decimal
     warranty_months: int
     stock_status: str
+    stock_quantity: int
     lead_time_days: int
     brochure_url: Optional[str] = None
     manual_url: Optional[str] = None

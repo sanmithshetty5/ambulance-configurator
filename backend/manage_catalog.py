@@ -17,17 +17,29 @@ def add_vehicle(db):
         print("Name cannot be empty.")
         return
         
+    # Get manufacturers
+    print("\nAvailable Manufacturers:")
+    manufacturers = db.query(models.Manufacturer).all()
+    for m in manufacturers:
+        print(f"[{m.id}] {m.name} ({m.country})")
     try:
-        base_cost = float(input("Base Cost (₹, e.g. 500000): "))
-        length_mm = float(input("Interior Cargo Length (mm, e.g. 3000) or Enter to skip: ") or 0)
-        width_mm = float(input("Interior Cargo Width (mm, e.g. 1700) or Enter to skip: ") or 0)
-        height_mm = float(input("Interior Cargo Height (mm, e.g. 1800) or Enter to skip: ") or 0)
+        manuf_id = int(input("Select Manufacturer ID: "))
+    except ValueError:
+        print("Invalid ID. Aborting.")
+        return
+
+    try:
+        base_cost = float(input("Base Cost (Rs., e.g. 500000): "))
+        length_mm = float(input("Exterior Length (mm, e.g. 4900) or Enter to skip: ") or 0)
+        width_mm = float(input("Exterior Width (mm, e.g. 1900) or Enter to skip: ") or 0)
+        height_mm = float(input("Exterior Height (mm, e.g. 2600) or Enter to skip: ") or 0)
     except ValueError:
         print("Invalid number input. Aborting.")
         return
 
     new_v = models.Vehicle(
         name=name,
+        manufacturer_id=manuf_id,
         base_cost=base_cost,
         length_mm=length_mm if length_mm > 0 else None,
         width_mm=width_mm if width_mm > 0 else None,
@@ -35,7 +47,7 @@ def add_vehicle(db):
     )
     db.add(new_v)
     db.commit()
-    print(f"\n✅ Vehicle '{name}' added successfully with ID: {new_v.id}!")
+    print(f"\n[OK] Vehicle '{name}' added successfully with ID: {new_v.id}!")
 
 def add_equipment(db):
     print("--- Add New Interior Equipment ---")
@@ -44,14 +56,52 @@ def add_equipment(db):
         print("Name cannot be empty.")
         return
         
-    category = input("Category (medical / safety / comfort / storage): ").strip().lower()
+    # List categories
+    print("\nAvailable Categories:")
+    categories = db.query(models.EquipmentCategory).all()
+    for cat in categories:
+        print(f"[{cat.id}] {cat.name}")
+    try:
+        category_id = int(input("Select Category ID: "))
+    except ValueError:
+        print("Invalid Category ID. Aborting.")
+        return
+
+    # List brands
+    print("\nAvailable Brands:")
+    brands = db.query(models.Brand).all()
+    for b in brands:
+        print(f"[{b.id}] {b.name}")
+    try:
+        brand_id = int(input("Select Brand ID: "))
+    except ValueError:
+        print("Invalid Brand ID. Aborting.")
+        return
+
+    sku = input("SKU (e.g. BPL-STR-R1-IND): ").strip()
+    if not sku:
+        print("SKU cannot be empty.")
+        return
+
+    hsn_code = input("HSN Code (e.g. 94029020): ").strip()
+    if not hsn_code:
+        print("HSN Code cannot be empty.")
+        return
+
     mount_point = input("Mount Point Coordinate Key (e.g. mount_ventilator): ").strip()
     model_url = input("3D GLB Model Filename (e.g. ventilator.glb): ").strip()
+    
     is_mandatory_input = input("Is this item mandatory? (y/n): ").strip().lower()
     is_mandatory = is_mandatory_input == 'y'
 
     try:
-        unit_cost = float(input("Unit Cost (₹, e.g. 45000): "))
+        unit_cost = float(input("Unit Cost (Rs., e.g. 45000): "))
+        gst_rate = float(input("GST Rate (%, e.g. 12 or 18) [Default 18]: ") or 18)
+        warranty_months = int(input("Warranty Months [Default 12]: ") or 12)
+        stock_status = input("Stock Status (in_stock / out_of_stock / lead_time) [Default: in_stock]: ").strip() or "in_stock"
+        stock_quantity = int(input("Stock Quantity [Default 0]: ") or 0)
+        lead_time_days = int(input("Lead Time Days [Default 0]: ") or 0)
+        
         width_mm = float(input("Physical Width (mm) or Enter to skip: ") or 0)
         height_mm = float(input("Physical Height (mm) or Enter to skip: ") or 0)
         depth_mm = float(input("Physical Depth (mm) or Enter to skip: ") or 0)
@@ -67,11 +117,19 @@ def add_equipment(db):
 
     new_eq = models.Equipment(
         name=name,
-        category=category if category else "medical",
+        category_id=category_id,
+        brand_id=brand_id,
+        sku=sku,
+        hsn_code=hsn_code,
+        unit_cost=unit_cost,
+        gst_rate=gst_rate,
+        warranty_months=warranty_months,
+        stock_status=stock_status,
+        stock_quantity=stock_quantity,
+        lead_time_days=lead_time_days,
         mount_point=mount_point if mount_point else f"mount_{name.lower().replace(' ', '_')}",
         model_url=model_url if model_url else f"{name.lower().replace(' ', '_')}.glb",
         is_mandatory=is_mandatory,
-        unit_cost=unit_cost,
         width_mm=width_mm if width_mm > 0 else None,
         height_mm=height_mm if height_mm > 0 else None,
         depth_mm=depth_mm if depth_mm > 0 else None,
@@ -83,8 +141,26 @@ def add_equipment(db):
         rotation_z=rot_z
     )
     db.add(new_eq)
+    db.flush()
+
+    # Link Certifications
+    print("\nAvailable Certifications:")
+    certs = db.query(models.Certification).all()
+    for c in certs:
+        print(f"[{c.id}] {c.name} ({c.authority})")
+        
+    cert_ids_input = input("\nEnter certification IDs to link (comma separated, e.g. 1,3) or Enter for none: ").strip()
+    if cert_ids_input:
+        try:
+            cert_ids = [int(x.strip()) for x in cert_ids_input.split(",") if x.strip()]
+            selected_certs = db.query(models.Certification).filter(models.Certification.id.in_(cert_ids)).all()
+            new_eq.certifications.extend(selected_certs)
+            print(f"Linked {len(selected_certs)} certifications.")
+        except ValueError:
+            print("Invalid IDs format. No certifications linked.")
+
     db.commit()
-    print(f"\n✅ Equipment '{name}' added successfully with ID: {new_eq.id}!")
+    print(f"\n[OK] Equipment '{name}' added successfully with ID: {new_eq.id}!")
 
 def add_ambulance_type(db):
     print("--- Add New Ambulance Package Type ---")
@@ -92,64 +168,48 @@ def add_ambulance_type(db):
     if not name:
         print("Name cannot be empty.")
         return
-        
-    try:
-        package_cost = float(input("Package Cost (₹, e.g. 300000): "))
-    except ValueError:
-        print("Invalid cost. Aborting.")
+
+    code = input("Package Code (e.g. CCU): ").strip().upper()
+    if not code:
+        print("Code cannot be empty.")
         return
         
     description = input("Description: ").strip()
 
     new_type = models.AmbulanceType(
         name=name,
-        package_cost=package_cost,
+        code=code,
         description=description if description else None
     )
     db.add(new_type)
-    db.flush()
-
-    # Link default equipment items
-    print("\nAvailable Equipment items:")
-    equipment = db.query(models.Equipment).all()
-    for eq in equipment:
-        print(f"[{eq.id}] {eq.name} (₹{eq.unit_cost})")
-        
-    eq_ids_input = input("\nEnter equipment IDs to include by default (comma separated, e.g. 1,2,4) or Enter for none: ").strip()
-    if eq_ids_input:
-        try:
-            eq_ids = [int(x.strip()) for x in eq_ids_input.split(",") if x.strip()]
-            selected_items = db.query(models.Equipment).filter(models.Equipment.id.in_(eq_ids)).all()
-            new_type.default_equipment.extend(selected_items)
-            print(f"Linked {len(selected_items)} equipment items as defaults.")
-        except ValueError:
-            print("Invalid IDs format. No defaults linked.")
-
     db.commit()
-    print(f"\n✅ Ambulance Type '{name}' added successfully with ID: {new_type.id}!")
+    print(f"\n[OK] Ambulance Type '{name}' added successfully with ID: {new_type.id}!")
 
 def list_catalog(db):
     print_separator()
     print("=== CURRENT VEHICLES ===")
     for v in db.query(models.Vehicle).all():
-         print(f"ID: {v.id} | {v.name} (₹{v.base_cost}) - Dim: {v.length_mm}x{v.width_mm}x{v.height_mm} mm")
+         manuf_name = v.manufacturer.name if v.manufacturer else "N/A"
+         print(f"ID: {v.id} | {v.name} (Manufacturer: {manuf_name}) - Base Cost: Rs. {v.base_cost} | Ext Dim: {v.length_mm}x{v.width_mm}x{v.height_mm} mm")
          
     print("\n=== CURRENT AMBULANCE PACKAGES ===")
     for t in db.query(models.AmbulanceType).all():
-         defaults = ", ".join([eq.name for eq in t.default_equipment])
-         print(f"ID: {t.id} | {t.name} (₹{t.package_cost}) - Defaults: [{defaults}]")
+         print(f"ID: {t.id} | {t.name} (Code: {t.code}) - Description: {t.description}")
          
     print("\n=== CURRENT EQUIPMENT CATALOG ===")
     for eq in db.query(models.Equipment).all():
          mandatory_str = "MANDATORY" if eq.is_mandatory else "OPTIONAL"
-         print(f"ID: {eq.id} | {eq.name} ({eq.category}) - ₹{eq.unit_cost} [{mandatory_str}]")
+         category_name = eq.category.name if eq.category else "N/A"
+         brand_name = eq.brand.name if eq.brand else "N/A"
+         certs_str = ", ".join([c.name for c in eq.certifications])
+         print(f"ID: {eq.id} | {eq.name} ({category_name} - {brand_name}) - Rs. {eq.unit_cost} | SKU: {eq.sku} | Stock: {eq.stock_quantity} ({eq.stock_status}) | Certs: [{certs_str}] | [{mandatory_str}]")
     print_separator()
 
 def main():
     db = SessionLocal()
     try:
         while True:
-            print("\n🚑 AMBULANCE CONFIGURATOR DATABASE CATALOG MANAGER 🚑")
+            print("\n*** AMBULANCE CONFIGURATOR DATABASE CATALOG MANAGER ***")
             print("1. Add New Vehicle Chassis")
             print("2. Add New Equipment Item")
             print("3. Add New Ambulance Package / Type")

@@ -188,6 +188,7 @@ class Equipment(Base):
     is_mandatory = Column(Boolean, default=False)
     warranty_months = Column(Integer, default=12)
     stock_status = Column(String(50), default="in_stock")  # in_stock, out_of_stock, lead_time
+    stock_quantity = Column(Integer, default=0)
     lead_time_days = Column(Integer, default=0)
     
     # Documentation & Media

@@ -20,9 +20,12 @@ const EquipmentPanel = ({ equipment, instances, mountLimits, activeConversion, o
           
           const count = itemInstances.length;
           const minLimit = rules[item.id] || 0;
-          const maxLimit = mountLimits && mountLimits[item.mount_point] ? mountLimits[item.mount_point] : 10;
+          const stockQty = (item.stock_quantity !== undefined && item.stock_quantity !== null) ? item.stock_quantity : 10;
+          const spaceLimit = mountLimits && mountLimits[item.mount_point] !== undefined ? mountLimits[item.mount_point] : 10;
+          const effectiveMaxLimit = Math.min(spaceLimit, stockQty);
+          
           const isMinReached = count <= minLimit;
-          const isMaxReached = count >= maxLimit;
+          const isMaxReached = count >= effectiveMaxLimit;
 
           const handleRemoveLast = () => {
             if (!isMinReached) {
@@ -31,12 +34,25 @@ const EquipmentPanel = ({ equipment, instances, mountLimits, activeConversion, o
           };
           
           const handleAdd = () => {
-            if (isMaxReached) {
-              alert(`Cannot add more ${item.name}. The physical capacity limit for this ambulance model has been reached.`);
+            if (count >= effectiveMaxLimit) {
+              if (stockQty < spaceLimit && count >= stockQty) {
+                alert(`Cannot add more ${item.name}. Out of stock. The inventory stock limit (${stockQty} units) has been reached.`);
+              } else {
+                alert(`Cannot add more ${item.name}. The physical capacity limit for this ambulance model has been reached.`);
+              }
               return;
             }
             onAddInstance(item);
           };
+
+          let addBtnTitle = "Add one";
+          if (isMaxReached) {
+            if (stockQty < spaceLimit && count >= stockQty) {
+              addBtnTitle = "Out of stock / Maximum stock reached";
+            } else {
+              addBtnTitle = "Maximum physical slots reached";
+            }
+          }
 
           return (
             <div 
@@ -48,6 +64,13 @@ const EquipmentPanel = ({ equipment, instances, mountLimits, activeConversion, o
                 <div className="equipment-info">
                   <span className="equipment-name">{item.name}</span>
                   <span className="equipment-cost">₹{Number(item.unit_cost).toLocaleString('en-IN')}</span>
+                  <div className="equipment-stock" style={{ fontSize: '0.75rem', marginTop: '2px' }}>
+                    {stockQty === 0 ? (
+                      <span style={{ color: '#ef4444', fontWeight: 600 }}>Out of stock</span>
+                    ) : (
+                      <span style={{ color: '#4b5563' }}>{stockQty} in stock</span>
+                    )}
+                  </div>
                 </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -68,7 +91,7 @@ const EquipmentPanel = ({ equipment, instances, mountLimits, activeConversion, o
                   
                   <button 
                     onClick={handleAdd}
-                    title={isMaxReached ? "Maximum physical slots reached" : "Add one"}
+                    title={addBtnTitle}
                     style={{
                       width: '28px', height: '28px', borderRadius: '4px', border: '1px solid #d1d5db',
                       background: isMaxReached ? '#fee2e2' : 'white', cursor: isMaxReached ? 'not-allowed' : 'pointer',
@@ -79,6 +102,24 @@ const EquipmentPanel = ({ equipment, instances, mountLimits, activeConversion, o
                   </button>
                 </div>
               </div>
+
+              {/* Certifications row */}
+              {item.certifications && item.certifications.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                  {item.certifications.map((cert) => (
+                    <span 
+                      key={cert.id} 
+                      title={cert.authority || "Certification"}
+                      style={{
+                        fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px',
+                        background: '#e0f2fe', color: '#0369a1', fontWeight: 500
+                      }}
+                    >
+                      {cert.name}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {count > 0 && (
                 <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #e5e7eb', display: 'flex', flexDirection: 'column', gap: '6px' }}>
