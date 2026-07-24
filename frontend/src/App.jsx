@@ -5,10 +5,15 @@ import AmbulanceTypeSelector from './components/AmbulanceTypeSelector';
 import EquipmentPanel from './components/EquipmentPanel';
 import CostSummary from './components/CostSummary';
 import Viewer3D from './components/Viewer3D';
+import AdminLogin from './components/AdminLogin';
+import AdminDashboard from './components/AdminDashboard';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function App() {
+  const isAdminRoute = window.location.pathname.startsWith('/admin');
+  const [adminLoggedIn, setAdminLoggedIn] = useState(!!sessionStorage.getItem('admin_token'));
+
   const [vehicles, setVehicles] = useState([]);
   const [packages, setPackages] = useState([]);
   const [equipment, setEquipment] = useState([]);
@@ -204,6 +209,21 @@ function App() {
 
   const totalCost = baseCost + conversionCost + optionalEquipmentCost;
 
+  if (isAdminRoute) {
+    if (!adminLoggedIn) {
+      return <AdminLogin onLoginSuccess={() => setAdminLoggedIn(true)} />;
+    }
+    return (
+      <AdminDashboard 
+        onLogout={() => {
+          sessionStorage.removeItem('admin_token');
+          setAdminLoggedIn(false);
+          window.location.href = '/';
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="app-container">
       {notification && (
@@ -218,6 +238,33 @@ function App() {
           <span className="brand-title">Ambulance Configurator</span>
           <span className="brand-badge">POC</span>
         </div>
+        <a
+          href="/admin"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '7px 16px',
+            borderRadius: '8px',
+            background: 'rgba(59, 130, 246, 0.1)',
+            color: 'var(--color-primary)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
+            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.25)';
+          }}
+        >
+          ⚙️ Admin
+        </a>
       </header>
 
       <main className="app-content">

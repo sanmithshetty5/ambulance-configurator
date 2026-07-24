@@ -178,5 +178,68 @@ class ConfigurationResponse(BaseModel):
     def get_package_id(cls, v, info):
         return v
 
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
+
+class AdminLoginResponse(BaseModel):
+    success: bool
+    token: Optional[str] = None
+
+class VehicleCreate(BaseModel):
+    name: str
+    manufacturer_id: int
+    base_cost: Decimal
+    length_mm: Optional[float] = None
+    width_mm: Optional[float] = None
+    height_mm: Optional[float] = None
+
+class EquipmentCreate(BaseModel):
+    name: str
+    category_id: int
+    brand_id: int
+    sku: str
+    hsn_code: str
+    unit_cost: Decimal
+    gst_rate: Decimal
+    is_mandatory: bool
+    warranty_months: int
+    stock_status: str
+    stock_quantity: int
+    lead_time_days: int
+    mount_point: str
+    model_url: str
+    width_mm: Optional[float] = None
+    height_mm: Optional[float] = None
+    depth_mm: Optional[float] = None
+    position_x: Optional[float] = 0.0
+    position_y: Optional[float] = 0.0
+    position_z: Optional[float] = 0.0
+    rotation_x: Optional[float] = 0.0
+    rotation_y: Optional[float] = 0.0
+    rotation_z: Optional[float] = 0.0
+    certification_ids: List[int] = []
+
+class AmbulanceTypeCreate(BaseModel):
+    name: str
+    code: str
+    description: Optional[str] = None
+
+class ConversionSpecCreate(BaseModel):
+    vehicle_id: int
+    ambulance_type_id: int
+    patient_length_mm: float
+    patient_width_mm: float
+    patient_height_mm: float
+    patient_volume_liters: Optional[float] = None
+    conversion_cost: Decimal
+    payload_capacity_kg: Optional[float] = None
+    electrical_capacity_ah: Optional[float] = None
+    oxygen_mounting_capacity_liters: Optional[float] = None
+    hvac_type: Optional[str] = None
+    description: Optional[str] = None
+    default_equipment_ids: List[int] = []
+    feature_ids: List[int] = []
+
 
 
