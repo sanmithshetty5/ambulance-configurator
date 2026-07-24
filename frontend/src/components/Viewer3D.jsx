@@ -73,8 +73,8 @@ const AmbulanceScene = ({ instances, selectedVehicle, onMountLimitsUpdate }) => 
   });
 
   // Base dimensions of the 3D model (Tata Winger real-world exterior dims)
-  const BASE_LENGTH = 4940; // Blender X
-  const BASE_WIDTH = 1950;  // Blender Y (Three Z)
+  const BASE_LENGTH = 5480; // Blender X
+  const BASE_WIDTH = 1900;  // Blender Y (Three Z)
   const BASE_HEIGHT = 2670; // Blender Z (Three Y)
   
   // Calculate scale factors based on the user's explicit Blender mapping:

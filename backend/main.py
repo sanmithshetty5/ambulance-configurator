@@ -83,7 +83,7 @@ def seed_database():
                 name="Tata Winger Ambulance Chassis", 
                 manufacturer_id=m_tata.id, 
                 base_cost=400000.00,
-                length_mm=4940, width_mm=1950, height_mm=2670
+                length_mm=5480, width_mm=1900, height_mm=2670
             )
             v_traveller = models.Vehicle(
                 name="Force Traveller Ambulance Chassis", 
@@ -205,7 +205,7 @@ def seed_database():
                 category_id=cat_medical.id, brand_id=b_bpl.id,
                 sku="BPL-STR-R1-IND", hsn_code="94029020",
                 unit_cost=50000.00, gst_rate=12.00, is_mandatory=True,
-                warranty_months=24, stock_status="in_stock", lead_time_days=0,
+                warranty_months=24, stock_status="in_stock", stock_quantity=50, lead_time_days=0,
                 brochure_url="/docs/stretcher_brochure.pdf",
                 specifications_json=json.dumps({
                     "Material": "High-strength Aluminum Alloy",
@@ -219,8 +219,8 @@ def seed_database():
                     "Anti-corrosive polyurethane wheels"
                 ]),
                 mount_point="mount_stretcher", model_url="stretcher.glb",
-                width_mm=550, height_mm=200, depth_mm=1900,
-                position_x=0.0, position_y=-0.65, position_z=0.6,
+                width_mm=1800, height_mm=627, depth_mm=860,
+                position_x=0.0, position_y=0.0, position_z=0.0,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
 
@@ -229,7 +229,7 @@ def seed_database():
                 category_id=cat_medical.id, brand_id=b_allied.id,
                 sku="ALL-OXY-D-IND", hsn_code="73110010",
                 unit_cost=30000.00, gst_rate=12.00, is_mandatory=True,
-                warranty_months=60, stock_status="in_stock", lead_time_days=0,
+                warranty_months=60, stock_status="in_stock", stock_quantity=50, lead_time_days=0,
                 brochure_url="/docs/oxygen_kit.pdf",
                 specifications_json=json.dumps({
                     "Capacity": "47 Liters Water Capacity",
@@ -243,8 +243,8 @@ def seed_database():
                     "Heavy-duty bulkhead mounting brackets included"
                 ]),
                 mount_point="mount_oxygen_cylinder", model_url="oxygen_cylinder.glb",
-                width_mm=230, height_mm=760, depth_mm=230,
-                position_x=-0.65, position_y=-0.35, position_z=0.5,
+                width_mm=230, height_mm=1400, depth_mm=230,
+                position_x=0.0, position_y=0.0, position_z=0.0,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
 
@@ -253,7 +253,7 @@ def seed_database():
                 category_id=cat_storage.id, brand_id=b_godrej.id,
                 sku="GOD-CAB-POLY-L", hsn_code="94031000",
                 unit_cost=25000.00, gst_rate=18.00, is_mandatory=False,
-                warranty_months=12, stock_status="in_stock", lead_time_days=3,
+                warranty_months=12, stock_status="in_stock", stock_quantity=50, lead_time_days=3,
                 brochure_url="/docs/cabinet_brochure.pdf",
                 specifications_json=json.dumps({
                     "Material": "Poly-laminated MDF board",
@@ -266,8 +266,8 @@ def seed_database():
                     "Vibration-isolated wall fasteners"
                 ]),
                 mount_point="mount_medical_cabinet", model_url="medical_cabinet.glb",
-                width_mm=400, height_mm=500, depth_mm=200,
-                position_x=0.7, position_y=0.1, position_z=0.0,
+                width_mm=315, height_mm=804, depth_mm=200,
+                position_x=0.0, position_y=0.0, position_z=0.0,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
 
@@ -276,7 +276,7 @@ def seed_database():
                 category_id=cat_comfort.id, brand_id=b_harita.id,
                 sku="HAR-SEA-BEN-01", hsn_code="94012000",
                 unit_cost=20000.00, gst_rate=18.00, is_mandatory=True,
-                warranty_months=36, stock_status="in_stock", lead_time_days=0,
+                warranty_months=36, stock_status="in_stock", stock_quantity=50, lead_time_days=0,
                 brochure_url="/docs/attendant_seating.pdf",
                 specifications_json=json.dumps({
                     "Material": "Flame-retardant polyurethane foam",
@@ -289,8 +289,8 @@ def seed_database():
                     "Easily wipeable vinyl upholstery"
                 ]),
                 mount_point="mount_seating", model_url="seating.glb",
-                width_mm=700, height_mm=800, depth_mm=400,
-                position_x=0.55, position_y=-0.5, position_z=-0.3,
+                width_mm=520, height_mm=800, depth_mm=490,
+                position_x=0.0, position_y=0.0, position_z=0,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
 
@@ -299,7 +299,7 @@ def seed_database():
                 category_id=cat_safety.id, brand_id=b_autolite.id,
                 sku="AUT-LIT-LED-INT", hsn_code="85122020",
                 unit_cost=15000.00, gst_rate=18.00, is_mandatory=True,
-                warranty_months=24, stock_status="in_stock", lead_time_days=0,
+                warranty_months=24, stock_status="in_stock", stock_quantity=50, lead_time_days=0,
                 brochure_url="/docs/cabin_lights.pdf",
                 specifications_json=json.dumps({
                     "Voltage": "12V DC input",
@@ -322,7 +322,7 @@ def seed_database():
                 category_id=cat_storage.id, brand_id=b_godrej.id,
                 sku="GOD-STR-BENCH-BOX", hsn_code="94032000",
                 unit_cost=10000.00, gst_rate=18.00, is_mandatory=False,
-                warranty_months=12, stock_status="in_stock", lead_time_days=2,
+                warranty_months=12, stock_status="in_stock", stock_quantity=50, lead_time_days=2,
                 brochure_url="/docs/underbench_storage.pdf",
                 specifications_json=json.dumps({
                     "Volume Capacity": "85 Liters",
