@@ -5,10 +5,15 @@ import AmbulanceTypeSelector from './components/AmbulanceTypeSelector';
 import EquipmentPanel from './components/EquipmentPanel';
 import CostSummary from './components/CostSummary';
 import Viewer3D from './components/Viewer3D';
+import AdminLogin from './components/AdminLogin';
+import AdminDashboard from './components/AdminDashboard';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function App() {
+  const isAdminRoute = window.location.pathname.startsWith('/admin');
+  const [adminLoggedIn, setAdminLoggedIn] = useState(!!sessionStorage.getItem('admin_token'));
+
   const [vehicles, setVehicles] = useState([]);
   const [packages, setPackages] = useState([]);
   const [equipment, setEquipment] = useState([]);
@@ -203,6 +208,21 @@ function App() {
   }
 
   const totalCost = baseCost + conversionCost + optionalEquipmentCost;
+
+  if (isAdminRoute) {
+    if (!adminLoggedIn) {
+      return <AdminLogin onLoginSuccess={() => setAdminLoggedIn(true)} />;
+    }
+    return (
+      <AdminDashboard 
+        onLogout={() => {
+          sessionStorage.removeItem('admin_token');
+          setAdminLoggedIn(false);
+          window.location.href = '/';
+        }} 
+      />
+    );
+  }
 
   return (
     <div className="app-container">

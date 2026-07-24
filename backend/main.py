@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, SessionLocal
 import models
-from routers import vehicles, packages, equipment, configurations, conversions
+from routers import vehicles, packages, equipment, configurations, conversions, admin
 import json
 
 # Create database tables on startup if they don't exist
@@ -29,6 +29,7 @@ app.include_router(packages.router)
 app.include_router(equipment.router)
 app.include_router(configurations.router)
 app.include_router(conversions.router)
+app.include_router(admin.router)
 
 def seed_database():
     db = SessionLocal()
