@@ -238,6 +238,33 @@ function App() {
           <span className="brand-title">Ambulance Configurator</span>
           <span className="brand-badge">POC</span>
         </div>
+        <a
+          href="/admin"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '7px 16px',
+            borderRadius: '8px',
+            background: 'rgba(59, 130, 246, 0.1)',
+            color: 'var(--color-primary)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
+            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.25)';
+          }}
+        >
+          ⚙️ Admin
+        </a>
       </header>
 
       <main className="app-content">
