@@ -1,7 +1,7 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Center, Html, Clone } from '@react-three/drei';
+import { OrbitControls, useGLTF, Center, Html, Clone, ContactShadows, Environment } from '@react-three/drei';
 
 // Individual Equipment Component locked to a specific position
 const EquipmentFixed = ({ modelFile, position, rotation }) => {
@@ -191,23 +191,29 @@ const Viewer3D = ({ instances, selectedVehicle, onMountLimitsUpdate }) => {
         >
           <Suspense fallback={<CanvasLoader />}>
             {/* Ambient Lighting for soft base lighting */}
-            <ambientLight intensity={0.4} />
+            <ambientLight intensity={0.6} />
             
             {/* Main Key Directional Light */}
             <directionalLight
-              position={[5, 10, 3]}
-              intensity={1.2}
+              position={[8, 12, 5]}
+              intensity={1.5}
               castShadow
               shadow-mapSize={[1024, 1024]}
             />
             
             {/* Fill Point Light inside/near the cabin */}
-            <pointLight position={[0, 1.5, 0]} intensity={0.8} distance={6} />
+            <pointLight position={[0, 1.5, 0]} intensity={0.5} distance={8} />
+
+            {/* Studio Environment Map for realistic reflections */}
+            <Environment preset="city" />
             
-            {/* Ground Grid Helper */}
-            <gridHelper 
-              args={[16, 16, '#3b82f6', '#1f2937']} 
-              position={[0, 0, 0]} 
+            {/* Soft Contact Shadows on the floor instead of a hard grid */}
+            <ContactShadows 
+              position={[0, -0.01, 0]} 
+              opacity={0.4} 
+              scale={20} 
+              blur={2} 
+              far={10} 
             />
 
             <Center>

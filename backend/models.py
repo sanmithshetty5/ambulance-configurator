@@ -207,6 +207,7 @@ class Equipment(Base):
     width_mm = Column(Float, nullable=True)
     height_mm = Column(Float, nullable=True)
     depth_mm = Column(Float, nullable=True)
+    weight_kg = Column(Float, nullable=True, default=0.0)
     position_x = Column(Float, nullable=True, default=0.0)
     position_y = Column(Float, nullable=True, default=0.0)
     position_z = Column(Float, nullable=True, default=0.0)

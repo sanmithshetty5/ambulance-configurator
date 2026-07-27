@@ -221,6 +221,7 @@ def seed_database():
                 ]),
                 mount_point="mount_stretcher", model_url="stretcher.glb",
                 width_mm=1800, height_mm=627, depth_mm=860,
+                weight_kg=35.0,
                 position_x=0.0, position_y=0.0, position_z=0.0,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
@@ -245,6 +246,7 @@ def seed_database():
                 ]),
                 mount_point="mount_oxygen_cylinder", model_url="oxygen_cylinder.glb",
                 width_mm=230, height_mm=1400, depth_mm=230,
+                weight_kg=45.0,
                 position_x=0.0, position_y=0.0, position_z=0.0,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
@@ -268,6 +270,7 @@ def seed_database():
                 ]),
                 mount_point="mount_medical_cabinet", model_url="medical_cabinet.glb",
                 width_mm=315, height_mm=804, depth_mm=200,
+                weight_kg=25.0,
                 position_x=0.0, position_y=0.0, position_z=0.0,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
@@ -291,6 +294,7 @@ def seed_database():
                 ]),
                 mount_point="mount_seating", model_url="seating.glb",
                 width_mm=520, height_mm=800, depth_mm=490,
+                weight_kg=20.0,
                 position_x=0.0, position_y=0.0, position_z=0,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
@@ -314,6 +318,7 @@ def seed_database():
                 ]),
                 mount_point="mount_emergency_lighting", model_url="emergency_lighting.glb",
                 width_mm=600, height_mm=30, depth_mm=100,
+                weight_kg=5.0,
                 position_x=0.0, position_y=0.85, position_z=0.0,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
@@ -337,6 +342,7 @@ def seed_database():
                 ]),
                 mount_point="mount_storage_unit", model_url="storage_unit.glb",
                 width_mm=500, height_mm=350, depth_mm=350,
+                weight_kg=15.0,
                 position_x=-0.65, position_y=-0.65, position_z=-0.3,
                 rotation_x=0.0, rotation_y=0.0, rotation_z=0.0
             )
